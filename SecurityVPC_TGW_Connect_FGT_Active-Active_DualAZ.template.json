@@ -50,6 +50,7 @@
 						"KeyPair",
 						"EncryptVolumes",
 						"InitS3Bucket",
+						"FortiOSVersion",
 						"LicenseType",
 						"FortiGate1LicenseFile",
 						"FortiGate2LicenseFile"
@@ -208,6 +209,16 @@
 			"MinLength": "1",
 			"Description": "Provide the Init S3 Bucket name, where your config files will be created  *** the bucket should exist in the same region as this deployment for successful bootstrapping ***"
 		},
+		"FortiOSVersion": {
+			"Type": "String",
+			"Default": "6.4.x",
+			"Description": "Select the verion of FortiOS to use (latest GA AMI will be used)",
+			"AllowedValues": [
+				"6.2.x",
+				"6.4.x",
+				"7.0.x"
+			]
+		},
 		"LicenseType": {
 			"Type": "String",
 			"Description": "Select the license type for the FortiGates",
@@ -223,6 +234,22 @@
 		"FortiGate2LicenseFile": {
 			"Type": "String",
 			"Description": "[BYOL Only, leave blank for PAYG] Provide the name of the BYOL license file in the Init S3 Bucket for FortiGate2 (ie fgt2.lic or prefix/fgt2.lic)"
+		}
+	},
+	"Mappings": {
+		"FortiOSAMISearchString": {
+			"6.2.x": {
+				"BYOL": "FortiGate-VM64-AWS *(6.2.*)*",
+				"PAYG": "FortiGate-VM64-AWSONDEMAND *(6.2.*)*"
+			},
+			"6.4.x": {
+				"BYOL": "FortiGate-VM64-AWS *(6.4.*)*",
+				"PAYG": "FortiGate-VM64-AWSONDEMAND *(6.4.*)*"
+			},
+			"7.0.x": {
+				"BYOL": "FortiGate-VM64-AWS *(7.0.*)*",
+				"PAYG": "FortiGate-VM64-AWSONDEMAND *(7.0.*)*"
+			}
 		}
 	},
 	"Conditions": {
@@ -1445,10 +1472,14 @@
 					]
 				},
 				"LicenseType": {
-					"Fn::If": [
-						"LicenseTypeBYOL",
-						"FortiGate-VM64-AWS *(6.4.*)*",
-						"FortiGate-VM64-AWSONDEMAND *(6.4.*)*"
+					"Fn::FindInMap": [
+						"FortiOSAMISearchString",
+						{
+							"Ref": "FortiOSVersion"
+						},
+						{
+							"Ref": "LicenseType"
+						}
 					]
 				}
 			}
@@ -1529,7 +1560,7 @@
 								"config rule",
 								"edit 1",
 								"set match-ip-address pflist-match-any",
-								"set set-aspath-action append",
+								"set set-aspath-action prepend",
 								"set set-aspath '{FgtBgpAsn}'",
 								"unset set-ip-nexthop",
 								"unset set-ip6-nexthop",
@@ -1542,7 +1573,7 @@
 								"config rule",
 								"edit 1",
 								"set match-ip-address pflist-match-any",
-								"set set-aspath-action append",
+								"set set-aspath-action prepend",
 								"set set-aspath '{FgtBgpAsn} {FgtBgpAsn}'",
 								"unset set-ip-nexthop",
 								"unset set-ip6-nexthop",
@@ -1566,7 +1597,6 @@
 								"set ebgp-enforce-multihop enable",
 								"set ebgp-multihop-ttl 2",
 								"set remote-as {TgwBgpAsn}",
-								"next",
 								"next",
 								"end",
 								"end",
@@ -1934,7 +1964,7 @@
 								"                return None",
 								"            for entry in response['TransitGatewayConnectPeers']:",
 								"                if entry['State'] == 'deleted':",
-								"                        logger.info('--> Deleted TgwConnectPeer: {}'.format(response))",								
+								"                        logger.info('--> Deleted TgwConnectPeer: {}'.format(response))",
 								"                        responseData = {'msg':'200'}",
 								"                        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)",
 								"                        return None",
