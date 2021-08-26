@@ -253,14 +253,6 @@
 		}
 	},
 	"Conditions": {
-		"LicenseTypeBYOL": {
-			"Fn::Equals": [
-				{
-					"Ref": "LicenseType"
-				},
-				"BYOL"
-			]
-		}
 	},
 	"Resources": {
 		"VPCID": {
@@ -955,7 +947,7 @@
 								{
 									"Effect": "Allow",
 									"Action": [
-										"ec2:Describe*",
+										"ec2:DescribeInstances",
 										"eks:DescribeCluster",
 										"eks:ListClusters",
 										"inspector:DescribeFindings",
@@ -1612,6 +1604,13 @@
 								"set service ALL",
 								"set logtraffic all",
 								"set nat enable",
+								"next",
+								"end",
+								"config system sdn-connector",
+								"edit aws-instance-role",
+								"set status enable",
+								"set type aws",
+								"set use-metadata-iam enable",
 								"next",
 								"end\\",
 								"'''",
